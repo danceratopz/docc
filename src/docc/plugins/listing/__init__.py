@@ -126,9 +126,7 @@ class ListingDiscover(Discover):
             if not Listable._show_source(source):
                 continue
 
-            path = source.relative_path
-            if not path:
-                path = source.output_path
+            path = source.output_path
 
             for parent in path.parents:
                 try:
@@ -140,6 +138,20 @@ class ListingDiscover(Discover):
 
                 listing.sources.add(source)
                 source = listing
+
+
+def _hierarchy_path(source: Source) -> PurePath:
+    """
+    Path that locates the source within the output URL hierarchy.
+
+    For a `ListingSource` this is the directory it represents (the same as
+    its `relative_path`); for everything else it is the source's
+    `output_path`. Listing entries' `output_path` ends in ``index``, so using
+    `output_path` directly would shift the parent up one level.
+    """
+    if isinstance(source, ListingSource):
+        return source.relative_path
+    return source.output_path
 
 
 class Listing:
@@ -158,22 +170,19 @@ class Listing:
         """
         Register a source.
         """
-        path = source.relative_path or source.output_path
-        self.sources[path.parent].add(source)
+        self.sources[_hierarchy_path(source).parent].add(source)
 
     def descendants(self, source: Source) -> Iterable[Source]:
         """
         All children of the given source.
         """
-        source_path = source.relative_path or source.output_path
-        return self.sources[source_path]
+        return self.sources[_hierarchy_path(source)]
 
     def siblings(self, source: Source) -> Iterable[Source]:
         """
         All sources with the same parent as the given source.
         """
-        source_path = source.relative_path or source.output_path
-        return self.sources[source_path.parent]
+        return self.sources[_hierarchy_path(source).parent]
 
 
 class ListingContext(Provider[Listing]):
@@ -360,7 +369,7 @@ def render_html(
             )  # TODO: Don't hardcode extension.
 
         active = source is context[Source]
-        path = source.relative_path or source.output_path
+        path = _hierarchy_path(source)
 
         if node.leaf:
             path = path.name

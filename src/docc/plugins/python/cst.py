@@ -85,6 +85,12 @@ class PythonDiscover(Discover):
     excludes all children.
     """
 
+    strip_path_to_package: Final[bool]
+    """
+    When `True`, drop the discovery root prefix (e.g. ``src``) from each
+    source's output path so URLs start at the top-level package.
+    """
+
     settings: PluginSettings
 
     def __init__(self, config: PluginSettings) -> None:
@@ -111,6 +117,11 @@ class PythonDiscover(Discover):
 
         self.excluded_paths = [PurePath(p) for p in excluded_paths]
 
+        strip_path_to_package = config.get("strip_path_to_package", False)
+        if not isinstance(strip_path_to_package, bool):
+            raise TypeError("strip_path_to_package must be a boolean")
+        self.strip_path_to_package = strip_path_to_package
+
     def discover(self, known: FrozenSet[T]) -> Iterator[Source]:
         """
         Find sources.
@@ -127,7 +138,12 @@ class PythonDiscover(Discover):
 
                 parents = relative_path.parents
                 if not any(p in parents for p in self.excluded_paths):
-                    yield PythonSource(root_path, relative_path, absolute_path)
+                    yield PythonSource(
+                        root_path,
+                        relative_path,
+                        absolute_path,
+                        strip_path_to_package=self.strip_path_to_package,
+                    )
 
 
 class PythonSource(TextSource):
@@ -138,16 +154,19 @@ class PythonSource(TextSource):
     root_path: Final[PurePath]
     absolute_path: Final[PurePath]
     _relative_path: Final[PurePath]
+    _strip_path_to_package: Final[bool]
 
     def __init__(
         self,
         root_path: PurePath,
         relative_path: PurePath,
         absolute_path: PurePath,
+        strip_path_to_package: bool = False,
     ) -> None:
         self.root_path = root_path
         self._relative_path = relative_path
         self.absolute_path = absolute_path
+        self._strip_path_to_package = strip_path_to_package
 
     @property
     def relative_path(self) -> Optional[PurePath]:
@@ -161,6 +180,8 @@ class PythonSource(TextSource):
         """
         Where to put the output derived from this source.
         """
+        if self._strip_path_to_package:
+            return self.absolute_path.relative_to(self.root_path)
         return self._relative_path
 
     def open(self) -> TextIO:
