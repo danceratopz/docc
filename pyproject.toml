@@ -12,6 +12,7 @@ line-length = 79
 
 [tool.docc.plugins."docc.python.discover"]
 paths = [ "src" ]
+strip_path_to_package = true
 
 [tool.docc.output]
 path = "docs"

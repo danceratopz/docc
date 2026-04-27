@@ -18,7 +18,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ output_path.name }} (in {{ output_path.parent }})</title>
+        <title>{{ current_label }} (in {{ output_path.parent }})</title>
         <link href="{{ static_path }}/chota.min.css" rel="stylesheet">
         <link href="{{ static_path }}/docc.css" rel="stylesheet">
         {% if search_path %}
@@ -53,7 +53,7 @@
 
                         <li>
                             <span aria-current="page">
-                                {{- output_path.name -}}
+                                {{- current_label -}}
                             </span>
                         </li>
                     </ul>

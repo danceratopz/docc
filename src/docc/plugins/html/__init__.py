@@ -337,8 +337,17 @@ class HTMLRoot(OutputNode):
         breadcrumbs = []
         path = self.context[Source].output_path
 
+        if path.name == "index":
+            # This page IS the directory index; surface the directory's
+            # name as the trailing breadcrumb instead of a redundant "index".
+            current_label = path.parent.name or "."
+            crumb_parents = list(reversed(path.parents))[:-1]
+        else:
+            current_label = path.name
+            crumb_parents = list(reversed(path.parents))
+
         if self.breadcrumbs:
-            for parent in reversed(path.parents):
+            for parent in crumb_parents:
                 index_path = parent / "index.html"
                 relative_path = _make_relative(path, index_path)
                 if relative_path is None:
@@ -356,6 +365,7 @@ class HTMLRoot(OutputNode):
                 search_base=search_base,
                 extra_css=extra_css,
                 output_path=path,
+                current_label=current_label,
                 breadcrumbs=breadcrumbs,
             )
         )
